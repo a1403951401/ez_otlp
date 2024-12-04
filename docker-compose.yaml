@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ez_otlp:latest
+    command: "python template.py"
+    environment:
+      EZ_RESOURCE_SERVICE_NAME: ez-otlp
+      EZ_ENDPOINT: http://host.docker.internal:4317/v1/traces
+#      EZ_ENDPOINT: http://host.docker.internal:4318/v1/traces
+#      EZ_gRPC: false
+    volumes:
+      - ./ez_otlp:/app/ez_otlp
+      - ./template.py:/app/template.py

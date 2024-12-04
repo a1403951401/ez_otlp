@@ -1,0 +1,16 @@
+[project]
+name = "ez-otlp"
+version = "0.1.0"
+description = "ez-otlp is a simple generation tool designed to help developers quickly generate OTLP data, supporting the efficient collection and transmission of telemetry data such as metrics, logs, and traces. This tool simplifies the process of constructing and sending OTLP data, making the integration of OpenTelemetry more convenient and faster. With an intuitive interface, developers can easily generate the required telemetry data and export it to monitoring systems without complex configurations. It is ideal for applications and systems that need to quickly build OTLP data streams."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "opentelemetry-api>=1.28.2",
+    "opentelemetry-exporter-otlp>=1.28.2",
+    "opentelemetry-instrumentation-logging>=0.49b2",
+    "opentelemetry-sdk>=1.28.2",
+    "orjson>=3.10.12",
+    "psutil>=6.1.0",
+    "pydantic-settings>=2.6.1",
+    "structlog>=24.4.0",
+]

@@ -1,0 +1,174 @@
+services:
+
+  zookeeper:
+    image: bitnami/zookeeper:${IMG_ZOOKEEPER}
+    container_name: signoz-zookeeper
+    hostname: zookeeper
+    user: root
+#    ports:
+#      - "2181:2181"
+#      - "2888:2888"
+#      - "3888:3888"
+    #    volumes:
+    #      - ./data/zookeeper:/bitnami/zookeeper
+    environment:
+      - ZOO_SERVER_ID=1
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ZOO_AUTOPURGE_INTERVAL=1
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:${IMG_CLICKHOUSE}
+    tty: true
+    container_name: signoz-clickhouse
+    hostname: clickhouse
+    ports:
+#      - "9000:9000"
+      - "8123:8123"
+#      - "9181:9181"
+    volumes:
+      - ./clickhouse-setup/clickhouse-config.xml:/etc/clickhouse-server/config.xml
+      - ./clickhouse-setup/clickhouse-users.xml:/etc/clickhouse-server/users.xml
+      - ./clickhouse-setup/custom-function.xml:/etc/clickhouse-server/custom-function.xml
+      - ./clickhouse-setup/clickhouse-cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
+      #      - ./data/clickhouse/:/var/lib/clickhouse/
+      - ./clickhouse-setup/user_scripts:/var/lib/clickhouse/user_scripts/
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "0.0.0.0:8123/ping"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  alertmanager:
+    image: signoz/alertmanager:${IMG_ALERTMANAGER}
+    container_name: signoz-alertmanager
+    #    volumes:
+    #      - ./data/alertmaRnager:/data
+    depends_on:
+      query-service:
+        condition: service_healthy
+    command:
+      - --queryService.url=http://query-service:8085
+      - --storage.path=/data
+
+  query-service:
+    image: signoz/query-service:${IMG_QUERY_SERVICE}
+    container_name: signoz-query-service
+    command:
+      [
+        "-config=/root/config/prometheus.yml",
+        "--use-logs-new-schema=true"
+      ]
+    # ports:
+    #   - "6060:6060"     # pprof port
+    #   - "8080:8080"     # query-service port
+
+    volumes:
+      - ./clickhouse-setup/prometheus.yml:/root/config/prometheus.yml
+      - ./signoz_data/:/var/lib/signoz/
+    environment:
+      - ClickHouseUrl=tcp://clickhouse:9000
+      - ALERTMANAGER_API_PREFIX=http://alertmanager:9093/api/
+      - SIGNOZ_LOCAL_DB_PATH=/var/lib/signoz/signoz.db
+      - DASHBOARDS_PATH=/root/config/dashboards
+      - STORAGE=clickhouse
+      - GODEBUG=netdns=go
+      - TELEMETRY_ENABLED=true
+      - DEPLOYMENT_TYPE=docker-standalone-amd
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "localhost:8080/api/v1/health"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      otel-collector-migrator-sync:
+        condition: service_completed_successfully
+
+  frontend:
+    image: signoz/frontend:${IMG_FRONTEND}
+    container_name: signoz-frontend
+    depends_on:
+      - alertmanager
+      - query-service
+    ports:
+      - "3301:3301"
+    volumes:
+      - ./common/nginx-config.conf:/etc/nginx/conf.d/default.conf
+
+  otel-collector:
+    image: signoz/signoz-otel-collector:${IMG_OTEL_COLLECTOR}
+    container_name: signoz-otel-collector
+    command:
+      [
+        "--config=/etc/otel-collector-config.yaml",
+        "--manager-config=/etc/manager-config.yaml",
+        "--copy-path=/var/tmp/collector-config.yaml",
+        "--feature-gates=-pkg.translator.prometheus.NormalizeName"
+      ]
+    user: root
+    volumes:
+      - ./clickhouse-setup/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./clickhouse-setup/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
+#      - /:/hostfs:ro
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
+      - LOW_CARDINAL_EXCEPTION_GROUPING=false
+    ports:
+#      - "1777:1777"     # pprof extension
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+#      - "8888:8888"     # OtelCollector internal metrics
+      # - "8889:8889"     # signoz spanmetrics exposed by the agent
+      # - "9411:9411"     # Zipkin port
+      # - "13133:13133"   # health check extension
+      # - "14250:14250"   # Jaeger gRPC
+      # - "14268:14268"   # Jaeger thrift HTTP
+      # - "55678:55678"   # OpenCensus receiver
+#      - "55679:55679"   # zPages extension
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      otel-collector-migrator-sync:
+        condition: service_completed_successfully
+      query-service:
+        condition: service_healthy
+
+  # 数据库初始化
+  otel-collector-migrator-sync:
+    image: signoz/signoz-schema-migrator:${IMG_MIGRATOR}
+    container_name: signoz-otel-migrator-sync
+    command:
+      - "sync"
+      - "--dsn=tcp://clickhouse:9000"
+      - "--up="
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
+  otel-collector-migrator-async:
+    image: signoz/signoz-schema-migrator:${IMG_MIGRATOR}
+    container_name: signoz-otel-migrator-async
+    command:
+      - "async"
+      - "--dsn=tcp://clickhouse:9000"
+      - "--up="
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      otel-collector-migrator-sync:
+        condition: service_completed_successfully
