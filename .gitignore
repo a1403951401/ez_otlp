@@ -10,3 +10,4 @@ wheels/
 .venv
 
 signoz/signoz_data
+.idea/

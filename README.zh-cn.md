@@ -4,8 +4,17 @@
 > 通过 OpenTelemetry 高效收集如日志、指标、跟踪，可以与现有的监控工具和平台（如 Prometheus、Grafana、Datadog 等）无缝集成
 
 🚀 快速实现 应用程序性能监控、日志管理、分布式跟踪、指标和仪表板、警报
+
 🛠️ 通过环境变量解决99%的参数设置，开箱即用，无需繁琐的参数就可以与 OpenTelemetry 无缝集成。
+
 ❤️ demo 采用 SigNoz，直观的界面体验现代化监控系统带来的拜尼马
+
+### 文档
+<a href="https://github.com/a1403951401/ez_otlp/blob/main/README.md">English</a> &bull;
+<a href="https://github.com/a1403951401/ez_otlp/blob/main/README.zh-cn.md">中文</a>
+
+### 安装
+> pip install ez-otlp
 
 ### 使用说明
 ##### 项目中使用

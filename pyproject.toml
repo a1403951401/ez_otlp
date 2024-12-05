@@ -1,8 +1,9 @@
 [project]
-name = "ez-otlp"
+name = "ez_otlp"
 version = "0.1.0"
-description = "ez-otlp is a simple generation tool designed to help developers quickly generate OTLP data, supporting the efficient collection and transmission of telemetry data such as metrics, logs, and traces. This tool simplifies the process of constructing and sending OTLP data, making the integration of OpenTelemetry more convenient and faster. With an intuitive interface, developers can easily generate the required telemetry data and export it to monitoring systems without complex configurations. It is ideal for applications and systems that need to quickly build OTLP data streams."
+description = "ez-otlp is a simple tool that enables convenient use of modern monitoring systems with minimal configuration."
 readme = "README.md"
+authors = [{ name = "Martin", email = "martin19980418@gmail.com" }]
 requires-python = ">=3.12"
 dependencies = [
     "opentelemetry-api>=1.28.2",
@@ -12,5 +13,36 @@ dependencies = [
     "orjson>=3.10.12",
     "psutil>=6.1.0",
     "pydantic-settings>=2.6.1",
-    "structlog>=24.4.0",
+]
+
+[project.urls]
+repository = "https://github.com/a1403951401/ez_otlp"
+
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
+
+
+[project.scripts]
+test-build = "test_build:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "opentelemetry-test-utils>=0.49b2",
+]
+
+[tool.hatch.build]
+include = ["ez_otlp", "README.md"]
+exclude = ["signoz", "docs", "test"]
+
+
+# 可选依赖项 (extras)
+[tool.hatch.extras]
+structlog = [
+    "structlog>=24.4.0"
 ]

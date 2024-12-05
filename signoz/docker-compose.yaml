@@ -2,7 +2,6 @@ services:
 
   zookeeper:
     image: bitnami/zookeeper:${IMG_ZOOKEEPER}
-    container_name: signoz-zookeeper
     hostname: zookeeper
     user: root
 #    ports:
@@ -19,7 +18,6 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:${IMG_CLICKHOUSE}
     tty: true
-    container_name: signoz-clickhouse
     hostname: clickhouse
     ports:
 #      - "9000:9000"
@@ -47,7 +45,6 @@ services:
 
   alertmanager:
     image: signoz/alertmanager:${IMG_ALERTMANAGER}
-    container_name: signoz-alertmanager
     #    volumes:
     #      - ./data/alertmaRnager:/data
     depends_on:
@@ -59,7 +56,6 @@ services:
 
   query-service:
     image: signoz/query-service:${IMG_QUERY_SERVICE}
-    container_name: signoz-query-service
     command:
       [
         "-config=/root/config/prometheus.yml",
@@ -101,7 +97,6 @@ services:
 
   frontend:
     image: signoz/frontend:${IMG_FRONTEND}
-    container_name: signoz-frontend
     depends_on:
       - alertmanager
       - query-service
@@ -112,7 +107,6 @@ services:
 
   otel-collector:
     image: signoz/signoz-otel-collector:${IMG_OTEL_COLLECTOR}
-    container_name: signoz-otel-collector
     command:
       [
         "--config=/etc/otel-collector-config.yaml",
@@ -151,7 +145,6 @@ services:
   # 数据库初始化
   otel-collector-migrator-sync:
     image: signoz/signoz-schema-migrator:${IMG_MIGRATOR}
-    container_name: signoz-otel-migrator-sync
     command:
       - "sync"
       - "--dsn=tcp://clickhouse:9000"
@@ -162,7 +155,6 @@ services:
 
   otel-collector-migrator-async:
     image: signoz/signoz-schema-migrator:${IMG_MIGRATOR}
-    container_name: signoz-otel-migrator-async
     command:
       - "async"
       - "--dsn=tcp://clickhouse:9000"
