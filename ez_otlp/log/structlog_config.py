@@ -75,17 +75,24 @@ class StructlogHandler:
 def get_struct_logging_config(
     logger_provider: LoggerProvider,
     log_lever: int = logging.DEBUG,
+    output:bool = False,
 ) -> StructLoggingConfig:
+    if output:
+        processors=structlog.dev.ConsoleRenderer()
+        logger_factory = structlog.PrintLoggerFactory()
+    else:
+        processors = structlog.processors.JSONRenderer(serializer=_dumps)
+        logger_factory = structlog.BytesLoggerFactory()
     return StructLoggingConfig(
         processors=[
             structlog.contextvars.merge_contextvars,
             structlog.processors.add_log_level,
             structlog.processors.format_exc_info,
-            structlog.processors.TimeStamper(fmt="iso", utc=True),
+            structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S", utc=False),
             StructlogHandler(logger_provider),
-            structlog.processors.JSONRenderer(serializer=orjson.dumps),
+            processors,
         ],
-        logger_factory=structlog.BytesLoggerFactory(),
+        logger_factory=logger_factory,
         wrapper_class=structlog.make_filtering_bound_logger(log_lever),
         cache_logger_on_first_use=True,
     )
