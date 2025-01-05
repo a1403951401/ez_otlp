@@ -73,26 +73,25 @@ class StructlogHandler:
 
 
 def get_struct_logging_config(
-    logger_provider: LoggerProvider,
+    logger_provider: LoggerProvider = None,
     log_lever: int = logging.DEBUG,
     output:bool = False,
 ) -> StructLoggingConfig:
+    processors = [
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.format_exc_info,
+        structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S", utc=False),
+    ]
+    if logger_provider:
+        processors.append(StructlogHandler(logger_provider))
     if output:
-        processors=structlog.dev.ConsoleRenderer()
-        logger_factory = structlog.PrintLoggerFactory()
+        processors.append(structlog.dev.ConsoleRenderer())
     else:
-        processors = structlog.processors.JSONRenderer(serializer=_dumps)
-        logger_factory = structlog.BytesLoggerFactory()
+        processors.append(structlog.processors.JSONRenderer(serializer=_dumps))
     return StructLoggingConfig(
-        processors=[
-            structlog.contextvars.merge_contextvars,
-            structlog.processors.add_log_level,
-            structlog.processors.format_exc_info,
-            structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S", utc=False),
-            StructlogHandler(logger_provider),
-            processors,
-        ],
-        logger_factory=logger_factory,
+        processors=processors,
+        logger_factory=structlog.PrintLoggerFactory() if output else structlog.BytesLoggerFactory(),
         wrapper_class=structlog.make_filtering_bound_logger(log_lever),
         cache_logger_on_first_use=True,
     )

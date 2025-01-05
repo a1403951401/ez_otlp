@@ -1,6 +1,6 @@
 [project]
 name = "ez_otlp"
-version = "0.1.0"
+version = "0.1.2"
 description = "ez-otlp is a simple tool that enables convenient use of modern monitoring systems with minimal configuration."
 readme = "README.md"
 authors = [{ name = "Martin", email = "martin19980418@gmail.com" }]
@@ -13,6 +13,7 @@ dependencies = [
     "orjson>=3.10.12",
     "psutil>=6.1.0",
     "pydantic-settings>=2.6.1",
+    "rich>=13.9.4",
 ]
 
 [project.urls]
